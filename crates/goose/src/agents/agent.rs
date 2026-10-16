@@ -3393,9 +3393,7 @@ impl Agent {
                             crate::posthog::emit_error(provider_err.telemetry_type(), &provider_err.to_string());
                             error!("Error: {}", provider_err);
                             yield AgentEvent::Message(
-                                Message::assistant().with_text(
-                                    format!("{provider_err}\n\nPlease resend your message to try again.")
-                                )
+                                Message::from_provider_error(provider_err)
                             );
                             break;
                         }
@@ -3405,9 +3403,7 @@ impl Agent {
                             crate::posthog::emit_error(provider_err.telemetry_type(), &provider_err.to_string());
                             error!("Error: {}", provider_err);
                             yield AgentEvent::Message(
-                                Message::assistant().with_text(
-                                    format!("Ran into this error: {provider_err}.\n\nPlease retry if you think this is a transient or recoverable error.")
-                                )
+                                Message::from_provider_error(provider_err)
                             );
                             break;
                         }
