@@ -572,8 +572,10 @@ impl<'a> ApiRequestBuilder<'a> {
     }
 
     pub async fn response_post(self, payload: &Value) -> Result<Response> {
-        let request = self.send_request(|url, client| client.post(url)).await?;
-        self.send_bounded(request.json(payload)).await
+        let request = self
+            .send_request(|url, client| client.post(url).json(payload))
+            .await?;
+        self.send_bounded(request).await
     }
 
     pub async fn multipart_post(self, form: reqwest::multipart::Form) -> Result<Response> {

@@ -358,6 +358,7 @@ fn meta_string(
 
 fn agent_capabilities_meta() -> Option<Meta> {
     let mut goose = serde_json::Map::new();
+    goose.insert("gnaiProviderRevision".to_string(), serde_json::json!(1));
     goose.insert("recipeParameterScopes".to_string(), serde_json::json!({}));
     if cfg!(feature = "local-inference") {
         goose.insert("localInference".to_string(), serde_json::json!({}));
@@ -1665,6 +1666,10 @@ fn prompt_error_from_message_content(
                     .data(serde_json::Value::Object(data)),
             )
         }
+        MessageContent::Error(error) => Some(agent_client_protocol::Error::new(
+            -32603,
+            error.message.clone(),
+        )),
         _ => None,
     }
 }
@@ -3497,6 +3502,25 @@ print(\"hello, world\")
         });
 
         assert!(prompt_error_from_message_content(&content).is_none());
+    }
+
+    #[test]
+    fn test_terminal_provider_errors_fail_prompt_but_quoted_errors_are_text() {
+        for provider_error in [
+            ProviderError::RequestFailed("connection reset".into()),
+            ProviderError::ExecutionError("invalid provider response".into()),
+        ] {
+            let message = Message::from_provider_error(&provider_error);
+            assert!(message
+                .content
+                .iter()
+                .any(|content| prompt_error_from_message_content(content).is_some()));
+        }
+        let quoted = Message::assistant().with_text("The log says: connection reset");
+        assert!(quoted
+            .content
+            .iter()
+            .all(|content| prompt_error_from_message_content(content).is_none()));
     }
 
     fn make_session_with_usage(usage: TokenUsage, accumulated_usage: TokenUsage) -> Session {

@@ -40,7 +40,9 @@ pub fn materialize_model_config(provider_name: &str, model: ModelConfig) -> Resu
 }
 
 fn apply_canonical_limits(provider_name: &str, model: ModelConfig) -> ModelConfig {
-    if provider_name == goose_providers::azure_foundry::AZURE_FOUNDRY_PROVIDER_NAME {
+    if provider_name == goose_providers::azure_foundry::AZURE_FOUNDRY_PROVIDER_NAME
+        || provider_name == "gnai"
+    {
         model
     } else {
         model
@@ -137,7 +139,9 @@ fn base_model_config_from_user_config(
         supports_vision: None,
         request_headers: None,
     };
-    if provider_name != goose_providers::azure_foundry::AZURE_FOUNDRY_PROVIDER_NAME {
+    if provider_name != goose_providers::azure_foundry::AZURE_FOUNDRY_PROVIDER_NAME
+        && provider_name != "gnai"
+    {
         model.normalize_effort_suffix();
     }
     Ok(model)

@@ -11,6 +11,7 @@ pub mod databricks;
 pub mod databricks_auth;
 pub mod databricks_v2;
 pub mod decision;
+pub mod gnai;
 pub mod google;
 pub use goose_provider_types::{
     base, cache_semantics, canonical, context_limit, conversation, documents, errors, formats,

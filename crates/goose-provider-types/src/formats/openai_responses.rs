@@ -21,14 +21,18 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 
+fn default_created_at() -> serde_json::Number {
+    0.into()
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponsesApiResponse {
     pub id: String,
     pub object: String,
     // Not every OpenAI-compatible provider echoes created_at back; the value
     // is carried but never used, so tolerate its absence.
-    #[serde(default)]
-    pub created_at: i64,
+    #[serde(default = "default_created_at")]
+    pub created_at: serde_json::Number,
     pub status: String,
     pub model: String,
     pub output: Vec<ResponseOutputItem>,
@@ -340,8 +344,8 @@ fn parse_responses_stream_event(data_line: &str) -> anyhow::Result<Option<Respon
 pub struct ResponseMetadata {
     pub id: String,
     pub object: String,
-    #[serde(default)]
-    pub created_at: i64,
+    #[serde(default = "default_created_at")]
+    pub created_at: serde_json::Number,
     pub status: String,
     pub model: String,
     #[serde(default)]
@@ -1361,6 +1365,37 @@ mod tests {
     use rmcp::object;
 
     #[tokio::test]
+    async fn test_responses_numeric_timestamps() -> anyhow::Result<()> {
+        for timestamp in ["1741476542", "1741476542.0", "1741476542.25"] {
+            let payload = format!(
+                r#"{{"id":"resp_test","object":"response","created_at":{timestamp},"status":"completed","model":"test","output":[]}}"#
+            );
+            let response: ResponsesApiResponse = serde_json::from_str(&payload)?;
+            assert_eq!(
+                response.created_at,
+                serde_json::from_str::<serde_json::Number>(timestamp)?
+            );
+            let lines = vec![
+                format!(r#"data: {{"type":"response.created","sequence_number":1,"response":{payload}}}"#),
+                r#"data: {"type":"response.output_text.delta","sequence_number":2,"item_id":"msg_test","output_index":0,"content_index":0,"delta":"hello"}"#.to_string(),
+                "data: [DONE]".to_string(),
+            ];
+            let stream = tokio_stream::iter(lines.into_iter().map(Ok));
+            let output = responses_api_to_streaming_message(stream);
+            futures::pin_mut!(output);
+            let mut text = String::new();
+            while let Some(result) = output.next().await {
+                let (message, _) = result?;
+                if let Some(message) = message {
+                    text.push_str(&message.as_concat_text());
+                }
+            }
+            assert_eq!(text, "hello");
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_responses_stream_ignores_keepalive_event() -> anyhow::Result<()> {
         let lines = vec![
             r#"data: {"type":"response.created","sequence_number":1,"response":{"id":"resp_1","object":"response","created_at":1737368310,"status":"in_progress","model":"gpt-5.2-pro","output":[]}}"#.to_string(),
@@ -1874,7 +1909,7 @@ mod tests {
         let response = ResponsesApiResponse {
             id: "resp_1".to_string(),
             object: "response".to_string(),
-            created_at: 0,
+            created_at: 0.into(),
             status: "completed".to_string(),
             model: "gpt-5.3-codex".to_string(),
             output: vec![ResponseOutputItem::FunctionCall {
@@ -1901,7 +1936,7 @@ mod tests {
         let response = ResponsesApiResponse {
             id: "resp_1".to_string(),
             object: "response".to_string(),
-            created_at: 0,
+            created_at: 0.into(),
             status: "completed".to_string(),
             model: "gpt-5.3-codex".to_string(),
             output: vec![
@@ -1953,7 +1988,7 @@ mod tests {
         let response = ResponsesApiResponse {
             id: "resp_1".to_string(),
             object: "response".to_string(),
-            created_at: 0,
+            created_at: 0.into(),
             status: "completed".to_string(),
             model: "gpt-5.3-codex".to_string(),
             output: vec![
@@ -1998,7 +2033,7 @@ mod tests {
             ResponsesApiResponse {
                 id: "resp_1".to_string(),
                 object: "response".to_string(),
-                created_at: 0,
+                created_at: 0.into(),
                 status: "completed".to_string(),
                 model: "gpt-5.3-codex".to_string(),
                 output: vec![ResponseOutputItem::Message {
@@ -2017,7 +2052,7 @@ mod tests {
             ResponsesApiResponse {
                 id: "resp_2".to_string(),
                 object: "response".to_string(),
-                created_at: 0,
+                created_at: 0.into(),
                 status: "completed".to_string(),
                 model: "gpt-5.3-codex".to_string(),
                 output: vec![ResponseOutputItem::FunctionCall {

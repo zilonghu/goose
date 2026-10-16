@@ -19,6 +19,7 @@ activities:
   - Test multi-turn thinking preservation for providers that reject replayed reasoning_content
   - Test Z.AI Coding Plan streamed tool calls and interruption recovery
   - Validate ACP thinking-effort discovery, forwarding, and provider switching
+  - Validate GNAI deployment routing and ACP terminal failures
   - Validate GDK observability hook lifecycle events and payload opt-in
   - Validate capped and uncapped auto-compaction thresholds and Desktop editing
   - Test error boundaries including nested delegation prevention
@@ -489,6 +490,19 @@ prompt: |
      managed providers preserve values they support.
 
   Log results to: {{ workspace_dir }}/phase3d_acp_effort.md
+  {% endif %}
+
+  {% if test_phases == "all" or "gnai" in test_phases %}
+  ## GNAI Provider and ACP Validation
+
+  From a source checkout with Rust available:
+  1. Run `cargo test --locked -p goose-providers --features rustls-tls gnai --lib`.
+  2. Run `cargo test --locked -p goose-provider-types --lib test_responses_numeric_timestamps`.
+  3. Run `cargo test --locked -p goose --no-default-features --features rustls-tls,scheduler test_terminal_provider_errors_fail_prompt --lib`.
+  Verify native protocol routing, exact aliases, authentication, adaptive reasoning,
+  numeric Responses timestamps, and structural failures while quoted error text remains a valid answer.
+  Record unavailable source/toolchain checks as SKIPPED.
+  Log results to: {{ workspace_dir }}/gnai.md
   {% endif %}
 
   {% if test_phases == "all" or "advanced" in test_phases %}

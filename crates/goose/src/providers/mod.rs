@@ -14,6 +14,7 @@ pub mod azureauth;
 pub mod base;
 #[cfg(feature = "aws-providers")]
 pub mod bedrock;
+pub mod gnai_def;
 pub mod canonical {
     pub use goose_providers::canonical::*;
 }

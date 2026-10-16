@@ -40,6 +40,7 @@ use crate::providers::azure_foundry_def::AzureFoundryProviderDef;
 use crate::providers::base::ProviderType;
 use crate::providers::databricks_def::{self, DatabricksProviderDef};
 use crate::providers::databricks_v2_def::{self, DatabricksV2ProviderDef};
+use crate::providers::gnai_def::GnaiProviderDef;
 use crate::providers::google_def::GoogleProviderDef;
 use crate::providers::muse_code_def::{MuseCodeProvider, MuseCodeProviderDef};
 use crate::providers::ollama_def::OllamaProviderDef;
@@ -71,6 +72,7 @@ async fn init_registry() -> RwLock<ProviderRegistry> {
         );
         registry.register::<AvianProvider>(false);
         registry.register::<AzureProvider>(false);
+        registry.register::<GnaiProviderDef>(false);
         registry.register_with_inventory::<AzureFoundryProviderDef>(
             true,
             Some(registrations::azure_foundry_inventory()),
